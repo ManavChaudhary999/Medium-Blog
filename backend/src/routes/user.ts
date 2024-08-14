@@ -4,14 +4,19 @@ import { sign } from 'hono/jwt';
 import getPrismaClient from '../db';
 
 type Bindings = {
-    DATABASE_URL: string,
+    // DATABASE_URL: string,
     JWT_SECRET_KEY: string,
 }
 
-const router = new Hono<{Bindings: Bindings}>();
+type Variables = {
+    prisma: any,
+}
+
+const router = new Hono<{Bindings: Bindings, Variables: Variables}>();
 
 router.post('/signup', async (c) => {
-    const prisma = await getPrismaClient(c.env.DATABASE_URL);
+    // const prisma = await getPrismaClient(c.env.DATABASE_URL);
+    const prisma = c.get('prisma');
 
     const { name, email, password } = await c.req.json();
     try {
@@ -30,7 +35,8 @@ router.post('/signup', async (c) => {
 });
 
 router.post('/signin', async (c) => {
-    const prisma = await getPrismaClient(c.env.DATABASE_URL);
+    // const prisma = await getPrismaClient(c.env.DATABASE_URL);
+    const prisma = c.get('prisma');
 
     const { email, password } = await c.req.json();
 
