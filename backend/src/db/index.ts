@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+export default function getPrismaClient(DATABASE_URL: string) {
+    const prisma = new PrismaClient({
+        datasourceUrl: DATABASE_URL,
+    }).$extends(withAccelerate());
 
-export default prisma;
+    return prisma;
+}

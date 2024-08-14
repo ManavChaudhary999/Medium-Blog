@@ -1,26 +1,27 @@
 import { Hono } from "hono";
-import { PrismaClient } from '@prisma/client/edge'
-import { withAccelerate } from '@prisma/extension-accelerate'
+import { sign } from 'hono/jwt';
 
+import getPrismaClient from '../db';
 
-const router = new Hono<{
-	Bindings: {
-		DATABASE_URL: string
-	}
-}>();
+type Bindings = {
+    DATABASE_URL: string,
+    JWT_SECRET_KEY: string,
+}
+
+const router = new Hono<{Bindings: Bindings}>();
 
 router.post('/signup', async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate());
+    const prisma = await getPrismaClient(c.env.DATABASE_URL);
 
     const { name, email, password } = await c.req.json();
     try {
         const user = await prisma.user.create({
             data: { name, email, password },
         });
+
+        const token = await sign({id: user.id}, c.env.JWT_SECRET_KEY);
     
-        return c.json({ user });
+        return c.json({ token });
     }
     catch (error) {
         console.error(error);
@@ -28,8 +29,25 @@ router.post('/signup', async (c) => {
     }
 });
 
-router.post('/signin', (c) => {
-    return c.text('Sign in');
+router.post('/signin', async (c) => {
+    const prisma = await getPrismaClient(c.env.DATABASE_URL);
+
+    const { email, password } = await c.req.json();
+
+    const user = await prisma.user.findUnique({
+        where: {
+            email: email,
+            password: password
+        }
+    })
+
+    if(!user) {
+        return c.json({message: 'Signin Failed'}, 400);
+    }
+
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET_KEY)
+
+    return c.json({ token });
 });
 
 export default router;
