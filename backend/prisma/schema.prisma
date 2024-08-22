@@ -12,7 +12,9 @@ model User {
   email     String  @unique
   name      String
   password  String
+  verified  Boolean @default(false)
   posts     Post[]
+  otps       Otp[]
 }
 
 model Post {
@@ -21,5 +23,13 @@ model Post {
   content     String
   published   Boolean @default(false)
   author      User    @relation(fields: [authorId], references: [id])
+  authorId    String
+}
+
+model Otp {
+  id          String    @id @default(uuid())
+  value       String
+  expiresAt   DateTime
+  author      User      @relation(fields: [authorId], references: [id])
   authorId    String
 }
